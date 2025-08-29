@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veyra_h | Game & Software Developer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;700&family=Montserrat:wght@600;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --purple: #6d28d9;
+      --blue: #2563eb;
+      --text-light: #e5e7eb;
+      --text-dark: #111827;
+      --accent: #a78bfa;
+    }
+
+    /* --- Base & Scrollbar --- */
+    html {
+        scroll-behavior: smooth;
+    }
+    body {
+      margin: 0;
+      font-family: 'Quicksand', sans-serif;
+      background-color: #0c0a18;
+      color: var(--text-light);
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #1e1b33; }
+    ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 10px; }
+
+    /* --- Animated Background --- */
+    .background-container {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: -1;
+    }
+    .aurora-circle {
+        position: absolute;
+        border-radius: 50%;
+        filter: blur(150px);
+        opacity: 0.4;
+        animation: drift 25s infinite alternate ease-in-out;
+    }
+    .aurora-1 { width: 400px; height: 400px; background: var(--purple); top: 10%; left: 15%; }
+    .aurora-2 { width: 350px; height: 350px; background: var(--blue); bottom: 10%; right: 15%; animation-duration: 30s; }
+    @keyframes drift { to { transform: translateX(100px) translateY(50px) rotate(180deg) scale(1.2); } }
+
+    /* --- Layout --- */
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+    main {
+      padding-top: 100px; /* Space for the header */
+    }
+
+    /* --- Header Navigation --- */
+    header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        padding: 15px 0;
+        background: rgba(12, 10, 24, 0.6);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        transition: padding 0.3s ease;
+    }
+    nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+    }
+    .logo {
+        font-family: 'Montserrat', sans-serif;
+        font-size: 1.8rem;
+        font-weight: 800;
+        text-decoration: none;
+        color: #fff;
+    }
+    .nav-links {
+        display: flex;
+        gap: 25px;
+    }
+    .nav-links a {
+        font-family: 'Montserrat', sans-serif;
+        text-decoration: none;
+        color: var(--text-light);
+        font-weight: 600;
+        padding-bottom: 5px;
+        position: relative;
+        transition: color 0.3s;
+    }
+    .nav-links a::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: var(--accent);
+        transform: scaleX(0);
+        transform-origin: right;
+        transition: transform 0.3s ease-out;
+    }
+    .nav-links a:hover, .nav-links a.active { color: #fff; }
+    .nav-links a:hover::after, .nav-links a.active::after { transform: scaleX(1); transform-origin: left; }
+    
+    /* --- General Section Styling --- */
+    .content-section {
+        padding: 80px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        opacity: 0; /* Initially hidden for scroll animation */
+        transform: translateY(30px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+    .content-section.visible {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .content-section:last-of-type { border-bottom: none; }
+    .content-section h2 {
+      font-family: 'Montserrat', sans-serif;
+      font-weight: 800;
+      font-size: 2.5rem;
+      margin: 0 0 20px 0;
+      background: linear-gradient(90deg, #fff, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p, li { line-height: 1.7; font-size: 1.1rem; }
+    ul { list-style-type: '✔️ '; padding-left: 25px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+
+    /* --- Hero Section --- */
+    #hero { text-align: center; }
+    #hero h1 {
+        font-family: 'Montserrat', sans-serif;
+        font-weight: 800;
+        font-size: 4rem;
+        margin: 0;
+    }
+    #hero p { font-size: 1.3rem; margin: 10px 0 0 0; color: var(--accent); }
+
+    /* --- Skills Chart --- */
+    #skills .chart-container {
+        height: 450px; position: relative;
+        background: rgba(0,0,0,0.2);
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    /* --- Projects Section --- */
+    #projects p b { color: var(--accent); }
+    
+    /* --- Why Work Section Card --- */
+    .why-card {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 15px;
+        padding: 25px;
+        backdrop-filter: blur(5px);
+    }
+    .why-card h3 {
+        margin: 0 0 10px 0;
+        font-family: 'Montserrat';
+        color: #fff;
+    }
+    
+    /* --- Footer --- */
+    footer {
+        text-align: center;
+        padding: 30px 20px;
+        opacity: 0.6;
+    }
+
+    /* --- Mobile Responsive --- */
+    .menu-toggle { display: none; }
+    @media (max-width: 768px) {
+        .grid { grid-template-columns: 1fr; }
+        .nav-links { display: none; } /* Hide links for mobile; add JS for a menu if needed */
+        #hero h1 { font-size: 2.8rem; }
+        .content-section h2 { font-size: 2rem; }
+        .logo { font-size: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="background-container">
+  <div class="aurora-circle aurora-1"></div>
+  <div class="aurora-circle aurora-2"></div>
+</div>
+
+<header>
+    <div class="container">
+        <nav>
+            <a href="#" class="logo">Veyra_h</a>
+            <div class="nav-links">
+                <a href="#about" class="active">About</a>
+                <a href="#skills">Skills</a>
+                <a href="#projects">Experience</a>
+                <a href="#why-work">Collab</a>
+            </div>
+        </nav>
+    </div>
+</header>
+
+<main class="container">
+    <section id="hero" class="content-section">
+        <h1>Hey I’m Veyra_h</h1>
+        <p>A Developer with 10 Years of Experience in multiple languages (cuz im like that) (and i can make hacks for fortnite, and other games.)</p>
+    </section>
+
+    <section id="about" class="content-section">
+        <h2>Who I Am</h2>
+        <div class="grid">
+            <div>
+                <h3>The Story</h3>
+                <pCoding is quite literally the love of my life, I code in multiple languages since 4, I saw my dad doing it and I just took interest in it, and kaboom. Like 8 or 9 languages and profecient in MOST. I've touched a bit on Roblox, Minecraft, unity, and UE5 coding.</p>
+                <h3>My Hobbies</h3>
+                <ul>
+                    <li>Competitive Sports (Soccer & Volleyball)</li>
+                    <li>Digital Art</li>
+                    <li>Playing the Piano (if I feel like it)</li>
+                    <li>Games ofcc</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Who I work best with</h3>
+                <p>I just work best with chill people, im only quiet if others are. And what you treat me is the way I will treat you. But lowk don't talk to me if you:</p>
+                <ul>
+                    <li>racist. (Gng srsly? It's 2025...)</li>
+                    <li>hypocrisy (this is ironic in some of my cases)</li>
+                    <li>BE OLD ENOUGH..(10-18).</li>
+                    <li>If you dislike shrimp Alfredo, fuck you.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="content-section">
+      <h2>Technical Skills</h2>
+      <p>This just shows how long I've been coding for each language, lua isn't here because idk how long I've been coding it.</p>
+      <div class="chart-container">
+        <canvas id="langChart"></canvas>
+      </div>
+    </section>
+    
+    <section id="projects" class="content-section">
+        <h2>Proven Experience</h2>
+        <p>so all of my projects I've made for others are private because they said to not make it open sourced</p>
+        <p>i made well over <b>12 custom projects</b> for clients, usually in <b>Minecraft (Plugins/Mods), Roblox, and Unity.</b> My code is just like that and it just works</p>
+    </section>
+    
+    <section id="why-work" class="content-section">
+        <h2>Why We Should Collaborate</h2>
+        <div class="grid">
+            <div class="why-card">
+                <h3>A Literal Decade of Experience</h3>
+                <p> simply just having experienced made me the goat and I know what im doing. I've been through any error you can imagine.</p>
+            </div>
+            <div class="why-card">
+                <h3>IM A HUMANN</h3>
+                <p>because im an actual human, im simply just more reliable, even though ChatGPT spits out code like it's nothing, im simply better because I quite literally almost don't make errors</p>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>© 2025 Veyra_h | made in like 2 hrs at school </p>
+    </div>
+</footer>
+
+<script>
+    // --- Chart.js Logic ---
+    const ctx = document.getElementById('langChart').getContext('2d');
+    const gradient = ctx.createLinearGradient(0, 0, 0, 450);
+    gradient.addColorStop(0, 'rgba(167, 139, 250, 0.8)');
+    gradient.addColorStop(1, 'rgba(59, 130, 246, 0.8)');
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Java / HTML / JS', 'C / C# / C++', 'Python', 'TypeScript', 'Rust', 'Swift', 'Go', 'R', 'SQL'],
+            datasets: [{
+                label: 'Years of Experience',
+                data: [4, 2, 2, 0.42, 0.33, 0.25, 0.16, 0.16, 0.16],
+                backgroundColor: gradient,
+                borderColor: 'rgba(255, 255, 255, 0.5)',
+                borderWidth: 2,
+                borderRadius: 8,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: { legend: { display: false } },
+            scales: {
+                y: {
+                    ticks: { color: 'var(--text-light)', font: { size: 14, family: "'Quicksand', sans-serif" }},
+                    grid: { display: false }
+                },
+                x: {
+                    title: { display: true, text: 'Years of Experience', color: 'var(--text-light)', font: { size: 14 }},
+                    ticks: { color: 'var(--text-light)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            }
+        }
+    });
+
+    // --- Active Nav & Scroll Animation Logic ---
+    const sections = document.querySelectorAll('.content-section');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    const observerOptions = {
+      root: null,
+      rootMargin: '0px',
+      threshold: 0.4 // When 40% of the section is visible
+    };
+
+    const observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          // Add 'visible' class to the section for fade-in animation
+          entry.target.classList.add('visible');
+          
+          // Update active nav link
+          const id = entry.target.getAttribute('id');
+          navLinks.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+          });
+        }
+      });
+    }, observerOptions);
+
+    sections.forEach(section => {
+      observer.observe(section);
+    });
+
+</script>
+
+</body>
+</html>
