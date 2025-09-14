@@ -5,49 +5,138 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>THIS IS WHAT YOU WANTED</title>
   <style>
-    html,body {
-      height: 100%;
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      text-align: center;
+    html,body{
+      height:100%;
+      margin:0;
+      background:#000;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+      color:#fff;
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(22px, 6vw, 56px);
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+
+    /* Make the video cover the viewport but keep aspect ratio */
+    video{
+      width:100vw;
+      height:100vh;
+      object-fit:cover;
+      display:block;
     }
-    img {
-      max-width: 95vw;
-      max-height: 75vh;
-      border-radius: 12px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5);
-      border: 6px solid rgba(255,255,255,0.03);
-      object-fit: contain;
-      background: #000;
+
+    /* Fullscreen overlay for "click to play" fallback */
+    .overlay {
+      position:fixed;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45));
+      z-index:40;
+      transition:opacity .25s ease;
     }
-    .caption {
-      font-size: 14px;
-      color: rgba(255,255,255,0.7);
+    .overlay.hidden { opacity:0; pointer-events:none; }
+    .btn {
+      background:rgba(255,255,255,0.06);
+      border:2px solid rgba(255,255,255,0.18);
+      padding:18px 26px;
+      border-radius:12px;
+      cursor:pointer;
+      user-select:none;
+      font-weight:700;
+      letter-spacing:1px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.6);
     }
+    .hint { margin-top:10px; font-size:12px; color:rgba(255,255,255,0.7); text-align:center; }
+    /* Hide native controls to keep it troll-y; but you can toggle */
+    video::-webkit-media-controls { display:none !important; }
+    video::-webkit-media-controls-enclosure { display:none !important; }
   </style>
 </head>
 <body>
-  <h1>THIS IS WHAT YOU WANTED</h1>
-  <img 
-    src="https://cdn.discordapp.com/attachments/1392448877445251134/1416646159736377366/IMG_7399.jpg?ex=68c79a0c&is=68c6488c&hm=e7bc964cae33f8c90e8c3f81accbb937ef1ae09062fe1c8b8321bdc3dfe7dd48&" 
-    alt="Troll image" 
-    loading="eager"
-  />
-  <div class="caption">im makin websites of anyb</div>
+  <!-- Video element: autoplay & muted initially (browsers usually allow this) -->
+  <video id="trollVideo"
+         autoplay
+         muted
+         playsinline
+         preload="auto"
+         loop
+         src="https://cdn.discordapp.com/attachments/1392448877445251134/1416647424570818600/copy_69C51546-CA2F-4505-9F1A-1007066C93AF.mov?ex=68c79b3a&is=68c649ba&hm=5beaf2a050bb45edea440bb742cda4699e69be65c28aade4a3bf9be300ae4488&">
+    Your browser does not support the video tag.
+  </video>
+
+  <!-- Fallback overlay shown if autoplay-with-sound is blocked -->
+  <div id="overlay" class="overlay">
+    <div style="text-align:center;">
+      <div id="playBtn" class="btn">CLICK TO PLAY WITH SOUND</div>
+      <div class="hint">If sound doesn't start, click the screen or press Space.</div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const video = document.getElementById('trollVideo');
+      const overlay = document.getElementById('overlay');
+      const playBtn = document.getElementById('playBtn');
+
+      // Try to unmute and play once the video is ready to play
+      function tryUnmuteAndPlay(){
+        // attempt to unmute and play
+        video.muted = false;
+        const p = video.play();
+        if (p !== undefined) {
+          p.then(() => {
+            // autoplay with sound succeeded — hide overlay
+            overlay.classList.add('hidden');
+            // remove overlay from pointer events after transition
+            setTimeout(() => overlay.style.display = 'none', 300);
+          }).catch((err) => {
+            // autoplay with sound blocked — keep overlay visible and ensure muted autoplay continues
+            console.warn('Autoplay with sound blocked:', err);
+            video.muted = true; // keep it muted so initial autoplay continues
+            overlay.classList.remove('hidden');
+          });
+        } else {
+          // No promise (older browsers) — assume it played
+          overlay.classList.add('hidden');
+          setTimeout(() => overlay.style.display = 'none', 300);
+        }
+      }
+
+      // When the video can play, try unmuting and playing with sound
+      video.addEventListener('canplay', tryUnmuteAndPlay, { once: true });
+
+      // If user clicks overlay, play with sound
+      function userRequestPlay(){
+        // Some browsers require a user gesture to unmute — this click provides it
+        overlay.style.display = 'none';
+        overlay.classList.add('hidden');
+        video.muted = false;
+        // ensure play is attempted
+        video.play().catch(e => {
+          console.warn('Play after user interaction failed:', e);
+        });
+      }
+
+      playBtn.addEventListener('click', userRequestPlay);
+      overlay.addEventListener('click', userRequestPlay);
+
+      // keyboard fallback: allow Space or Enter to trigger
+      window.addEventListener('keydown', (ev) => {
+        if (ev.code === 'Space' || ev.code === 'Enter') {
+          userRequestPlay();
+        }
+      });
+
+      // Optional: if autoplay succeeded muted and the user never interacts,
+      // the overlay will remain hidden after a few seconds if sound not enabled.
+      // (We try once more after a short timeout)
+      setTimeout(() => {
+        if (video.readyState >= 3) tryUnmuteAndPlay();
+      }, 1200);
+    })();
+  </script>
 </body>
 </html>
