@@ -1,53 +1,279 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>THIS IS WHAT YOU WANTED</title>
-  <style>
-    html,body {
-      height: 100%;
-      margin: 0;
-      background: #111;
-      color: #fff;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      text-align: center;
+<meta charset="UTF-8">
+<title>Big TJ Bracket</title>
+<style>
+    body {
+        background:#111;
+        color:white;
+        font-family:Arial, sans-serif;
+        padding:20px;
     }
-    h1 {
-      margin: 0;
-      font-size: clamp(22px, 6vw, 56px);
-      font-weight: 900;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+
+    textarea, button {
+        padding:10px;
+        margin:5px 0;
+        border-radius:6px;
+        border:none;
     }
-    img {
-      max-width: 95vw;
-      max-height: 75vh;
-      border-radius: 12px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 2px 6px rgba(0,0,0,0.5);
-      border: 6px solid rgba(255,255,255,0.03);
-      object-fit: contain;
-      background: #000;
+
+    button {
+        cursor:pointer;
+        background:#333;
+        color:white;
     }
-    .caption {
-      font-size: 14px;
-      color: rgba(255,255,255,0.7);
+
+    #bracket {
+        display:flex;
+        gap:60px;
+        margin-top:20px;
+        overflow-x:auto;
     }
-  </style>
+
+    .round {
+        display:flex;
+        flex-direction:column;
+        gap:60px;
+        position:relative;
+        min-width:180px;
+    }
+
+    .match {
+        background:#222;
+        padding:10px;
+        border-radius:8px;
+        position:relative;
+        width:160px;
+    }
+
+    .team {
+        background:#333;
+        margin:4px 0;
+        padding:6px;
+        border-radius:5px;
+        cursor:pointer;
+    }
+
+    .team:hover {
+        background:#444;
+    }
+
+    .bye {
+        color:#aaa;
+        font-style:italic;
+    }
+
+    .winner {
+        background:#0a0 !important;
+    }
+
+    .score-box {
+        display:flex;
+        justify-content:space-between;
+        margin-top:5px;
+        font-size:14px;
+    }
+
+    .score-input {
+        width:40px;
+        background:#000;
+        border:1px solid #444;
+        color:white;
+        padding:3px;
+        border-radius:4px;
+        text-align:center;
+    }
+
+    /* Connecting Lines */
+    .connector {
+        position:absolute;
+        height:2px;
+        background:#666;
+        right:-30px;
+        top:50%;
+        width:30px;
+    }
+
+    .connector-vertical {
+        position:absolute;
+        width:2px;
+        background:#666;
+        right:-30px;
+    }
+</style>
 </head>
 <body>
-  <h1>THIS IS WHAT YOU WANTED</h1>
-  <img 
-    src="https://cdn.discordapp.com/attachments/1392448877445251134/1416646159736377366/IMG_7399.jpg?ex=68c79a0c&is=68c6488c&hm=e7bc964cae33f8c90e8c3f81accbb937ef1ae09062fe1c8b8321bdc3dfe7dd48&" 
-    alt="Troll image" 
-    loading="eager"
-  />
-  <div class="caption">makin websites of anyone</div>
+
+<h1>Big TJ Bracket</h1>
+
+<h3>Enter Players (one per line):</h3>
+<textarea id="players" rows="8" cols="30"></textarea><br>
+
+<button onclick="generateBracket()">Generate</button>
+<button onclick="saveBracket()">Save</button>
+<button onclick="loadBracket()">Load</button>
+<button onclick="resetBracket()">Reset</button>
+
+<div id="bracket"></div>
+
+<script>
+let rounds = [];
+
+function generateBracket() {
+    const raw = document.getElementById("players").value.trim().split("\n");
+    let players = raw.filter(p => p.trim() !== "");
+
+    if (players.length < 2) return alert("Need at least 2 players.");
+
+    rounds = [];
+    rounds.push(makePairs(players));
+    buildNextRounds();
+    render();
+}
+
+function makePairs(list) {
+    let finalList = [];
+    for (let i = 0; i < list.length; i += 2) {
+        if (i + 1 >= list.length) {
+            finalList.push({
+                a: list[i],
+                b: "(BYE)",
+                aScore: 1,
+                bScore: 0,
+                winner: list[i]
+            });
+        } else {
+            finalList.push({
+                a: list[i],
+                b: list[i+1],
+                aScore: 0,
+                bScore: 0,
+                winner: null
+            });
+        }
+    }
+    return finalList;
+}
+
+function buildNextRounds() {
+    while (rounds[rounds.length - 1].length > 1) {
+        let prev = rounds[rounds.length - 1].map(m => m.winner);
+        rounds.push(makePairs(prev));
+    }
+}
+
+function updateScores(r, m) {
+    let match = rounds[r][m];
+
+    if (match.a === "(BYE)" || match.b === "(BYE)") return;
+
+    match.aScore = Number(document.getElementById(`as_${r}_${m}`).value);
+    match.bScore = Number(document.getElementById(`bs_${r}_${m}`).value);
+
+    if (match.aScore > match.bScore) match.winner = match.a;
+    else if (match.bScore > match.aScore) match.winner = match.b;
+    else match.winner = null;
+
+    if (rounds[r + 1]) {
+        let nextIndex = Math.floor(m / 2);
+        let side = m % 2 === 0 ? "a" : "b";
+        rounds[r + 1][nextIndex][side] = match.winner ?? "";
+    }
+
+    for (let i = r + 1; i < rounds.length; i++) {
+        let previous = rounds[i - 1].map(x => x.winner ?? "");
+        rounds[i] = makePairs(previous);
+    }
+
+    render();
+}
+
+function render() {
+    const container = document.getElementById("bracket");
+    container.innerHTML = "";
+
+    rounds.forEach((round, r) => {
+        const col = document.createElement("div");
+        col.className = "round";
+
+        round.forEach((m, i) => {
+            const div = document.createElement("div");
+            div.className = "match";
+
+            const a = document.createElement("div");
+            const b = document.createElement("div");
+
+            a.className = "team";
+            b.className = "team";
+
+            a.innerText = m.a;
+            b.innerText = m.b;
+
+            if (m.a === "(BYE)") a.classList.add("bye");
+            if (m.b === "(BYE)") b.classList.add("bye");
+
+            if (m.winner === m.a) a.classList.add("winner");
+            if (m.winner === m.b) b.classList.add("winner");
+
+            div.appendChild(a);
+            div.appendChild(b);
+
+            // Score boxes
+            if (m.b !== "(BYE)") {
+                const scoreBox = document.createElement("div");
+                scoreBox.className = "score-box";
+                scoreBox.innerHTML = `
+                    <input class="score-input" id="as_${r}_${i}" value="${m.aScore}" onchange="updateScores(${r},${i})"> 
+                    -
+                    <input class="score-input" id="bs_${r}_${i}" value="${m.bScore}" onchange="updateScores(${r},${i})">
+                `;
+                div.appendChild(scoreBox);
+            }
+
+            if (r < rounds.length - 1) {
+                let lineH = document.createElement("div");
+                lineH.className = "connector";
+                div.appendChild(lineH);
+
+                let lineV = document.createElement("div");
+                lineV.className = "connector-vertical";
+                lineV.style.height = "60px";
+                lineV.style.top = "-30px";
+                div.appendChild(lineV);
+            }
+
+            col.appendChild(div);
+        });
+
+        container.appendChild(col);
+    });
+}
+
+function saveBracket() {
+    localStorage.setItem("BIG_TJ_BRACKET", JSON.stringify({
+        players: document.getElementById("players").value,
+        rounds
+    }));
+    alert("Saved!");
+}
+
+function loadBracket() {
+    let d = localStorage.getItem("BIG_TJ_BRACKET");
+    if (!d) return alert("Nothing saved.");
+
+    d = JSON.parse(d);
+    document.getElementById("players").value = d.players;
+    rounds = d.rounds;
+    render();
+}
+
+function resetBracket() {
+    rounds = [];
+    document.getElementById("players").value = "";
+    document.getElementById("bracket").innerHTML = "";
+}
+</script>
+
 </body>
 </html>
